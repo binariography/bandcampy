@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -19,8 +18,8 @@ var embedAlbumArt bool
 // Define a function to handle command-line flags
 func init() {
 	// Register flags for embedding album art
-	flag.BoolVar(&embedAlbumArt, "embed-album-art", false, "Embed the album art into tracks?[default:false]")
-	flag.Parse()
+	//flag.BoolVar(&embedAlbumArt, "embed-album-art", false, "Embed the album art into tracks?[default:false]")
+	//flag.Parse()
 }
 
 // Config struct for environment and file paths

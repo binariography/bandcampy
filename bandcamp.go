@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/gocolly/colly"
+	"github.com/tidwall/gjson"
 )
 
 var embedAlbumArt bool
@@ -56,13 +57,13 @@ type Album struct {
 }
 
 var site string
+var CACHEDIR string = "./_cache"
 
 func init() {
 	// Use command-line argument to form the Bandcamp URL
 	if len(os.Args) < 2 {
 		log.Fatal("Please provide the Bandcamp URL subdomain as a command-line argument.")
 	}
-	site = "https://" + os.Args[1] + ".bandcamp.com"
 }
 
 func main() {
@@ -70,17 +71,24 @@ func main() {
 	var config Config
 	config.setEnvVars()
 
+	defer os.RemoveAll(CACHEDIR)
+
 	// Handle Bandcamp URL input
 	var Link string
 	myAlbum := Album{}
-	if strings.Contains(os.Args[1], "album") {
+	if strings.Contains(os.Args[1], "/album/") || strings.Contains(os.Args[1], "/track/") {
 		Link = os.Args[1]
 	} else {
 		log.Fatal("No album is provided")
 	}
 
 	// Create a new collector for web scraping
-	c := colly.NewCollector()
+	c := colly.NewCollector(
+
+		// Cache responses to prevent multiple download of pages
+		// even if the collector is restarted
+		colly.CacheDir(CACHEDIR),
+	)
 
 	// Extract album data from the page
 	c.OnHTML("script[data-tralbum]", func(e *colly.HTMLElement) {
@@ -114,6 +122,7 @@ func (c *Config) setEnvVars() {
 // Set album variables from JSON data
 func (A *Album) setVars(jsonData string) {
 	err := json.Unmarshal([]byte(jsonData), A)
+	A.Name = gjson.Get(jsonData, "current.title").String()
 	if err != nil {
 		log.Fatalf("Failed to parse album JSON: %v", err)
 	}
@@ -170,7 +179,7 @@ func downloadTracks(url, fileName, destDir string) {
 	// Get the data from the URL
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Printf("Failed to download track %v: %v", url, err)
+		log.Printf("Failed to download track %v from %v: %v", fileName, url, err)
 		return
 	}
 	defer resp.Body.Close()

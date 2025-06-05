@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/gocolly/colly"
+	"github.com/tidwall/gjson"
 )
 
 var embedAlbumArt bool
@@ -75,7 +76,7 @@ func main() {
 	// Handle Bandcamp URL input
 	var Link string
 	myAlbum := Album{}
-	if strings.Contains(os.Args[1], "/album/") {
+	if strings.Contains(os.Args[1], "/album/") || strings.Contains(os.Args[1], "/track/") {
 		Link = os.Args[1]
 	} else {
 		log.Fatal("No album is provided")
@@ -121,6 +122,7 @@ func (c *Config) setEnvVars() {
 // Set album variables from JSON data
 func (A *Album) setVars(jsonData string) {
 	err := json.Unmarshal([]byte(jsonData), A)
+	A.Name = gjson.Get(jsonData, "current.title").String()
 	if err != nil {
 		log.Fatalf("Failed to parse album JSON: %v", err)
 	}
